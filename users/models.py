@@ -114,3 +114,4 @@ class CodeVerified(BaseModel):
             self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_PHONE)
 
         super(CodeVerified, self).save(*args, **kvargs)
+

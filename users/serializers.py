@@ -1,8 +1,10 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from share.utilty import check_email_or_phone_number
-from .models import CustomUser, CodeVerified, VIA_EMAIL, VIA_PHONE
+from .models import CustomUser, CodeVerified, VIA_EMAIL, VIA_PHONE , PHOTO_DONE
 from django.core.mail import send_mail
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer as JwtTokenRefreshSerializer
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.conf import settings
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -73,4 +75,28 @@ class SignUpSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super(SignUpSerializer, self).to_representation(instance)
         data.update(instance.token())
+        return data
+
+
+class PhotoDoneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'photo', 'auth_status']
+
+    def update(self, instance, validated_data):
+        photo = validated_data.get('photo', None)
+        if photo:
+            instance.photo = photo
+            instance.auth_status = PHOTO_DONE
+            instance.save(update_fields=['photo', 'auth_status'])
+        return instance
+
+
+
+class TokenRefreshSerializer(JwtTokenRefreshSerializer):
+    def validate(self, attrs):
+        try:
+            data = super().validate(attrs)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
         return data
