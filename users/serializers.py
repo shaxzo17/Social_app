@@ -100,3 +100,44 @@ class TokenRefreshSerializer(JwtTokenRefreshSerializer):
         except TokenError as e:
             raise InvalidToken(e.args[0])
         return data
+
+
+from django.contrib.auth import authenticate
+
+
+class LoginSerializer(serializers.Serializer):
+    email_phone_number = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True, style={'input_type': 'password'})
+    access_token = serializers.CharField(read_only=True)
+    refresh_token = serializers.CharField(read_only=True)
+
+    def validate(self, attrs):
+        user_input = attrs.get("email_phone_number")
+        password = attrs.get("password")
+
+        if not user_input or not password:
+            raise ValidationError("Email/telefon va parol kiritilishi shart!")
+
+        auth_type = check_email_or_phone_number(user_input)
+
+        if auth_type == "email":
+            kwargs = {"email": user_input.lower()}
+        elif auth_type == "phone_number":
+            kwargs = {"phone_number": user_input}
+        else:
+            raise ValidationError("Email yoki telefon raqam xato ")
+
+        try:
+            user = CustomUser.objects.get(**kwargs)
+        except CustomUser.DoesNotExist:
+            raise ValidationError("Bunday foydalanuvchi mavjud emas!")
+
+        if not user.check_password(password):
+            raise ValidationError("Parol xato")
+
+        tokens = user.token()
+
+        return {
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+        }
