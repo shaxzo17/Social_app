@@ -7,11 +7,12 @@ from datetime import datetime, timedelta
 import uuid, random
 
 ORDINARY_USER, MANAGER, ADMIN = ('ordinary_user', 'manager', 'admin')
-VIA_EMAIL, VIA_PHONE = ('via_email', 'via_phone')
+# VIA_EMAIL,
+VIA_PHONE = 'via_phone'
 NEW, CODE_VERIFIED, DONE, PHOTO_DONE = ('new', 'code_verified', 'done', 'photo_done')
 
 EXPIRATION_PHONE = 2
-EXPIRATION_EMAIL = 5
+# EXPIRATION_EMAIL = 5
 
 
 class CustomUser(BaseModel, AbstractUser):
@@ -22,7 +23,7 @@ class CustomUser(BaseModel, AbstractUser):
     )
 
     AUTH_TYPE = (
-        (VIA_EMAIL, "Via Email"),
+        # (VIA_EMAIL, "Via Email"),
         (VIA_PHONE, "Via Phone"),
     )
 
@@ -36,8 +37,10 @@ class CustomUser(BaseModel, AbstractUser):
     auth_type = models.CharField(max_length=31, choices=AUTH_TYPE)
     user_role = models.CharField(max_length=31, choices=USER_ROLE, default=ORDINARY_USER)
     auth_status = models.CharField(max_length=31, choices=AUTH_STATUS, default=NEW)
-    email = models.EmailField(unique=True, blank=True, null=True)  # vergul olib tashlandi
+
+    email = models.EmailField(unique=False, blank=True, null=True)
     phone_number = models.CharField(max_length=13, unique=True, blank=True, null=True)
+
     photo = models.ImageField(
         upload_to='users_photo',
         blank=True,
@@ -57,6 +60,7 @@ class CustomUser(BaseModel, AbstractUser):
             user=self,
             verify_type=verify_type
         )
+        print(f"Your verify code: {code}")
         return code
 
     def check_username(self):
@@ -65,9 +69,9 @@ class CustomUser(BaseModel, AbstractUser):
             while CustomUser.objects.filter(username=self.username).exists():
                 self.username = f"{self.username}+{str(random.randint(0, 100))}"
 
-    def check_email(self):
-        if self.email:
-            self.email = self.email.lower()
+    # def check_email(self):
+    #     if self.email:
+    #         self.email = self.email.lower()
 
     def check_pass(self):
         if not self.password:
@@ -85,20 +89,19 @@ class CustomUser(BaseModel, AbstractUser):
 
     def clean(self):
         self.check_username()
-        self.check_email()
+        # self.check_email()
         self.check_pass()
         self.hashing_pass()
 
     def save(self, *args, **kwargs):
         super(CustomUser, self).save(*args, **kwargs)
         self.clean()
-        super(CustomUser, self).save(update_fields=['username', 'email', 'password'])
-
+        super(CustomUser, self).save(update_fields=['username', 'password']) # email olib tashlandi
 
 
 class CodeVerified(BaseModel):
     AUTH_TYPE = (
-        (VIA_EMAIL, "Via Email"),
+        # (VIA_EMAIL, "Via Email"),
         (VIA_PHONE, "Via Phone"),
     )
     code = models.CharField(max_length=4, blank=True, null=True)
@@ -108,10 +111,9 @@ class CodeVerified(BaseModel):
     code_status = models.BooleanField(default=False)
 
     def save(self, *args, **kvargs):
-        if self.verify_type ==VIA_EMAIL:
-            self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_EMAIL)
-        else:
-            self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_PHONE)
+        # if self.verify_type == VIA_EMAIL:
+        #     self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_EMAIL)
+        # else:
+        self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_PHONE)
 
         super(CodeVerified, self).save(*args, **kvargs)
-

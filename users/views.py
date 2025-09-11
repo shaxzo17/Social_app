@@ -8,8 +8,6 @@ from .models import CustomUser
 from rest_framework.generics import ListCreateAPIView , UpdateAPIView
 from rest_framework.permissions import AllowAny , IsAuthenticated
 
-# Create your views here.
-
 class SignUpView(ListCreateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = SignUpSerializer
