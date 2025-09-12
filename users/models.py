@@ -96,7 +96,7 @@ class CustomUser(BaseModel, AbstractUser):
     def save(self, *args, **kwargs):
         super(CustomUser, self).save(*args, **kwargs)
         self.clean()
-        super(CustomUser, self).save(update_fields=['username', 'password']) # email olib tashlandi
+        super(CustomUser, self).save(update_fields=['username', 'password'])
 
 
 class CodeVerified(BaseModel):

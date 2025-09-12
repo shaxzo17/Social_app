@@ -138,6 +138,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.CustomUser'
 
 
+ESKIZ_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NjAyODkzMTYsImlhdCI6MTc1NzY5NzMxNiwicm9sZSI6InRlc3QiLCJzaWduIjoiYzZmMzY4Y2E0ZTcwZGU2NjJlMGJlMDdhOThhMTZhYmEzZjVjYjViZDMxYjNkYzI0NDQ0NTdiMDcyY2U1OWYyMiIsInN1YiI6IjEyMDE0In0.tx9kYgBTX8mYpH2aa-Hhv2J0Ed-BvhtYCg_jntqakrg"
+ESKIZ_EMAIL = "shaxzodaavalboyeva14@gmail.com"
+ESKIZ_PASSWORD = "uyga2008"
+
+
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
