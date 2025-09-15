@@ -5,6 +5,7 @@ from django.core.validators import FileExtensionValidator
 from share.models import BaseModel
 from datetime import datetime, timedelta
 import uuid, random
+from django.utils import timezone
 
 ORDINARY_USER, MANAGER, ADMIN = ('ordinary_user', 'manager', 'admin')
 # VIA_EMAIL,
@@ -117,3 +118,6 @@ class CodeVerified(BaseModel):
         self.expiration_time = datetime.now() + timedelta(minutes=EXPIRATION_PHONE)
 
         super(CodeVerified, self).save(*args, **kvargs)
+
+    def is_expired(self):
+        return timezone.now() > self.expiration_time

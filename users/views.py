@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenRefreshView
-from .serializers import SignUpSerializer, PhotoDoneSerializer, TokenRefreshSerializer , LoginSerializer , VerifyCodeSerializer
+from .serializers import SignUpSerializer, PhotoDoneSerializer, TokenRefreshSerializer , LoginSerializer , VerifyCodeSerializer , ResetPasswordSerializer , UpdatePasswordSerializer , ForgotPasswordSerializer
 from .models import CustomUser
 from rest_framework.generics import ListCreateAPIView , UpdateAPIView
 from rest_framework.permissions import AllowAny , IsAuthenticated
@@ -38,3 +38,17 @@ class VerifyCodeView(APIView):
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ForgotPasswordView(generics.CreateAPIView):
+    serializer_class = ForgotPasswordSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class ResetPasswordView(generics.CreateAPIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class UpdatePasswordView(generics.CreateAPIView):
+    serializer_class = UpdatePasswordSerializer
+    permission_classes = [permissions.IsAuthenticated]

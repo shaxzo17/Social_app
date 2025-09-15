@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from share.sms_services import send_phone
+from django.contrib.auth.hashers import make_password
 from .models import CustomUser, CodeVerified, VIA_PHONE, PHOTO_DONE , CODE_VERIFIED
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer as JwtTokenRefreshSerializer
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
@@ -113,3 +114,86 @@ class TokenRefreshSerializer(JwtTokenRefreshSerializer):
         except TokenError as e:
             raise InvalidToken(e.args[0])
         return data
+
+
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+
+    def validate(self, attrs):
+        phone = attrs.get("phone_number")
+        try:
+            user = CustomUser.objects.get(phone_number=phone)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"phone_number": "Bunday foydalanuvchi yo'q!"})
+        attrs["user"] = user
+        return attrs
+
+    def create(self, validated_data):
+        user = validated_data["user"]
+        user.create_verify_code(verify_type=VIA_PHONE)
+        return {"detail": "Tasdiqlash kodi yuborildi!"}
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    phone_number = serializers.CharField()
+    code = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=6)
+
+    def validate(self, attrs):
+        phone = attrs.get("phone_number")
+        code = attrs.get("code")
+        password = attrs.get("new_password")
+
+        try:
+            user = CustomUser.objects.get(phone_number=phone)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"phone_number": "Bunday foydalanuvchi yo'q!"})
+
+        try:
+            code_obj = user.verify_codes.filter(code=code, code_status=False).latest("created_at")
+        except CodeVerified.DoesNotExist:
+            raise serializers.ValidationError({"code": "Kod xato yoki eskirgan!"})
+
+        if code_obj.is_expired():
+            raise serializers.ValidationError({"code": "Kod muddati tugagan!"})
+
+        attrs["user"] = user
+        attrs["code_obj"] = code_obj
+        attrs["new_password"] = password
+        return attrs
+
+    def create(self, validated_data):
+        user = validated_data["user"]
+        password = validated_data["new_password"]
+        code_obj = validated_data["code_obj"]
+
+        user.password = make_password(password)
+        user.save(update_fields=["password"])
+
+        code_obj.code_status = True
+        code_obj.save(update_fields=["code_status"])
+        return {"detail": "Parol muvafaqiyatli o'zgartirildi!"}
+
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=6)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        old_password = attrs.get("old_password")
+
+        if not user.check_password(old_password):
+            raise serializers.ValidationError({"old_password": "Eski parol xato"})
+
+        attrs["user"] = user
+        return attrs
+
+    def create(self, validated_data):
+        user = validated_data["user"]
+        new_password = validated_data["new_password"]
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+        return {"detail": "Parol yangilandi!"}
